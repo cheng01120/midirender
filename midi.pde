@@ -14,7 +14,7 @@ static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 String midi_filename = "D:/Cubase/MIDI/exported/passacaglia.mid";
 float  fps  = 29.97f;
 
-PImage background;
+PImage background, saber;
 long frameCounter = 0;
 long totalFrames  = 0;
 float microSecPerTick = 0.0f;
@@ -65,32 +65,32 @@ void setup() {
 }
 
 /*
-	up                         t0
-    ________________________ 
-	  | (0, 0)               |
-	  |                      |
-	  |                      |
-	  |                      |
-	  |                      |
-	  |                (w,h) |
-    ________________________
-	down                     t1
+时间线：
+     up                       t0
+      _________________________
+      | (0,  0)               |
+      |                       |
+      |                       |
+      |         WINDOW        |
+      |                       |
+      |                 (w,h) |
+      _________________________
+     down                     t1
 */
 
+// 画的顺序： 背景，白键，按下的白键， 方块，黑键， 按下的黑键。（先要保存按下的黑键的位置）
 void draw() {
 	background(0);
 
 	resetMatrix();
 	image(background, 0, 0);
-	//drawKeyboard();
 	if(flowKeys.size() == 0)  { drawKeyboard(); return; }
 
 	translate(0, WinY - PianoY); scale(1, -1);
 
 	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
-	float t0 = t1 + speed * 1000000;  // 划过屏幕的时间： 3秒。
+	float t0 = t1 + speed * 1000000;
 
-	// 键盘画的顺序： 白键，按下的白键， 黑键， 按下的黑键。（先要保存按下的黑键的位置）
 	drawWhiteKeys();
 	ArrayList<Float> pb = new ArrayList<Float>(); // pressed black keys.
 	for(int i = 0; i < flowKeys.size(); i ++) {
@@ -111,27 +111,27 @@ void draw() {
 			h += y; 
 			y = 0.0f; 
 
-			// 改变下方琴键的颜色。
 			if(!pos.isWhiteKey) {
-				//fill(255, 0, 0);
-				//rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
+				// 保存按下的黑键的位置。
+				//fill(255, 0, 0); rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
 				pb.add(pos.x);
 				pb.add(-PianoY*0.6f);
 				pb.add(pos.w);
 				pb.add(PianoY*0.6f);
 			}
 			else {
-				fill(0, 255, 0);
-				rect(pos.x, -PianoY* 1.0f, pos.w,  PianoY * 1.0f);
+				// 画按下的白键。
+				fill(0, 255, 0); rect(pos.x, -PianoY* 1.0f, pos.w,  PianoY * 1.0f);
 			}
 		}
 
-		// 方块。
-		fill(#eeeeee);
-		rect(pos.x, y, pos.w, h);
+		// draw 方块。
+		fill(#ffffff); rect(pos.x, y, pos.w, h);
 	}
 
 	drawBlackKeys();
+
+	// draw pressed black keys.
 	fill(255, 0, 0);
 	for(int i = 0; i < pb.size(); i += 4) {
 		rect(pb.get(i), pb.get(i+1), pb.get(i+2), pb.get(i+3));
@@ -142,6 +142,7 @@ void draw() {
 		videoExport.endMovie();
 		exit();
 	}
+
 	frameCounter++;
 }
 
@@ -290,9 +291,10 @@ void drawWhiteKeys() {
 	translate(0, WinY - PianoY);
 
 	float t1 = WinX * 1.0f / 52; // 52 white keys.
+	strokeWeight(1);
 	stroke(0, 0, 0);
 	for(int i = 0; i < 52; i++) {
-		fill(255, 255, 255);
+		fill(#eeeeee);
 		rect(i * t1, 0, t1, PianoY);
 	}
 	noStroke();
