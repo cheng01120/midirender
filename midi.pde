@@ -4,17 +4,24 @@ import java.util.*;
 import java.lang.Number.*;
 import com.hamoid.*;
 
+// 定义window的size。
+static final int   WinX   = 1366;
+static final int   WinY   = 768;
+static final int   PianoY = 168;  // 键盘的高度。
+static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
+
+// 要渲染的midi文件。
 String midi_filename = "D:/Cubase/MIDI/exported/passacaglia.mid";
+float  fps  = 29.97f;
 
 PImage piano, background;
 long frameCounter = 0;
 long totalFrames  = 0;
-float  fps = 29.97f;
 float microSecPerTick = 0.0f;
 VideoExport videoExport;
 
 
-color[] keyColor = { 
+static final color[] keyColor = { 
 	#a1ab20, #234fbe, #ab205b, #1a8cca, 
 	#234fbe, #ab9820, #20ab73, #ab8b20, 
 	#2058ab, #3a23be, #9c20ab, #2069ab 
@@ -33,12 +40,15 @@ class keyPos {  // 计算一个key在x方向的坐标以及宽度。
 	public boolean isWhiteKey;
 };
 
+public void settings() {
+	size(WinX, WinY);
+}
+
 void setup() {
-	size(1366, 768);
 	piano = loadImage("piano.png");
-	piano.resize(1366, 168);
+	piano.resize(WinX, PianoY);
 	background = loadImage("bg.png");
-	background.resize(1366, 768);
+	background.resize(WinX, WinY);
 
 	flowKeys = new Vector<keyEvent>();
 	loadMidi();
@@ -73,14 +83,15 @@ void draw() {
 	background(0);
 	translate(0, 0); scale(1, 1);
 	image(background, 0, 0);
-	image(piano, 0, 600);
+	image(piano, 0, WinY - PianoY);
+
 	if(flowKeys.size() == 0) return;
 
-	translate(0, 600); scale(1, -1);
+	translate(0, WinY - PianoY); scale(1, -1);
 
 	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
-	float t0 = t1 + 3.0f * 1000000;  // 划过屏幕的时间： 3秒。
-	float w  = 1366.0f / 88.0f;
+	float t0 = t1 + speed * 1000000;  // 划过屏幕的时间： 3秒。
+	float w  = WinX / 88.0f;
 
 	for(int i = 0; i < flowKeys.size(); i ++) {
 		keyEvent ke = flowKeys.get(i);
@@ -93,8 +104,8 @@ void draw() {
 		if(t_on > t0 || t_off < t1) continue;
 
 		//将时间转换为像素坐标。
-		float y = (t_on - t1) * 600.0f/3000000.0f;
-		float h = (t_off - t_on) * 600.0f/3000000.0f;
+		float y = (t_on - t1) * (WinY - PianoY)/(speed * 1000000);
+		float h = (t_off - t_on) * (WinY - PianoY)/(speed * 1000000);
 
 		if(y <= 0.0f) { // 方块已经触及到了键盘。
 			h += y; 
@@ -103,11 +114,11 @@ void draw() {
 			// 改变下方琴键的颜色。
 			if(!pos.isWhiteKey) {
 				fill(255, 0, 0);
-				rect(pos.x, -168*0.6f, pos.w, 168*0.6f); 
+				rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
 			}
 			else {
 				fill(0, 255, 0);
-				rect(pos.x, -168, pos.w,  168);
+				rect(pos.x, -PianoY, pos.w,  PianoY);
 			}
 		}
 		// 方块。
@@ -206,7 +217,7 @@ keyPos keyPosition(long key) {
 	pos.w = 0;
 	pos.isWhiteKey = false;
 
-	float whiteKeyWidth = 1366.0f / 52; // 52 white key , 36 black key.
+	float whiteKeyWidth = WinX / 52; // 52 white key , 36 black key.
 	long n = whiteKeyNumber(key);
 	if(n != -1) {
 		pos.x = n * whiteKeyWidth;
