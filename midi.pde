@@ -14,7 +14,7 @@ static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 String midi_filename = "D:/Cubase/MIDI/exported/passacaglia.mid";
 float  fps  = 29.97f;
 
-PImage piano, background;
+PImage background;
 long frameCounter = 0;
 long totalFrames  = 0;
 float microSecPerTick = 0.0f;
@@ -45,8 +45,6 @@ public void settings() {
 }
 
 void setup() {
-	piano = loadImage("piano.png");
-	piano.resize(WinX, PianoY);
 	background = loadImage("bg.png");
 	background.resize(WinX, WinY);
 
@@ -81,10 +79,10 @@ void setup() {
 
 void draw() {
 	background(0);
-	translate(0, 0); scale(1, 1);
-	image(background, 0, 0);
-	image(piano, 0, WinY - PianoY);
 
+	resetMatrix();
+	image(background, 0, 0);
+	drawKeyboard();
 	if(flowKeys.size() == 0) return;
 
 	translate(0, WinY - PianoY); scale(1, -1);
@@ -265,4 +263,35 @@ long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键�
 
 		return n * 7 + i + 2; 
 	}
+}
+
+void drawKeyboard() {
+	pushMatrix();
+	resetMatrix();
+
+	translate(0, WinY - PianoY);
+
+	float t1 = WinX * 1.0f / 52; // 52 white keys.
+	for(int i = 0; i < 52; i++) {
+		fill(255, 255, 255);
+		rect(i * t1, 0, t1, PianoY);
+	}
+
+  // draw the first black keys.  width of black key = 2 * whitekey / 3, height = 0.6 * whitekey
+	float t2 = t1 * 0.6667;
+	fill(0, 0, 0);
+	rect(t1 * 0.667, 0, t1 * 0.667, PianoY * 0.6);
+
+
+	float start = t1 * 2;
+
+	int[] blackkey_id = { 0, 1, 3, 4, 5 };
+	for(int i =0; i < 7; i++) { // draw the left 35 black keys.
+		for( int id : blackkey_id) {
+			int offset = 2 + i * 7 + id;
+			rect( (1.0f * offset + 0.667) * t1, 0, t1 * 0.667, PianoY * 0.6);
+		}
+	}
+
+	popMatrix();
 }
