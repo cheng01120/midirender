@@ -82,14 +82,17 @@ void draw() {
 
 	resetMatrix();
 	image(background, 0, 0);
-	drawKeyboard();
-	if(flowKeys.size() == 0) return;
+	//drawKeyboard();
+	if(flowKeys.size() == 0)  { drawKeyboard(); return; }
 
 	translate(0, WinY - PianoY); scale(1, -1);
 
 	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
 	float t0 = t1 + speed * 1000000;  // 划过屏幕的时间： 3秒。
 
+	// 键盘画的顺序： 白键，按下的白键， 黑键， 按下的黑键。（先要保存按下的黑键的位置）
+	drawWhiteKeys();
+	ArrayList<Float> pb = new ArrayList<Float>(); // pressed black keys.
 	for(int i = 0; i < flowKeys.size(); i ++) {
 		keyEvent ke = flowKeys.get(i);
 		color rectColor = keyColor[ ke.key % 12 ];
@@ -110,18 +113,28 @@ void draw() {
 
 			// 改变下方琴键的颜色。
 			if(!pos.isWhiteKey) {
-				fill(255, 0, 0);
-				rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
+				//fill(255, 0, 0);
+				//rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
+				pb.add(pos.x);
+				pb.add(-PianoY*0.6f);
+				pb.add(pos.w);
+				pb.add(PianoY*0.6f);
 			}
 			else {
 				fill(0, 255, 0);
 				rect(pos.x, -PianoY* 1.0f, pos.w,  PianoY * 1.0f);
 			}
 		}
-		// 方块。
 
+		// 方块。
 		fill(#eeeeee);
 		rect(pos.x, y, pos.w, h);
+	}
+
+	drawBlackKeys();
+	fill(255, 0, 0);
+	for(int i = 0; i < pb.size(); i += 4) {
+		rect(pb.get(i), pb.get(i+1), pb.get(i+2), pb.get(i+3));
 	}
 
 	videoExport.saveFrame();
@@ -266,17 +279,32 @@ long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键�
 }
 
 void drawKeyboard() {
+	drawWhiteKeys();
+	drawBlackKeys();
+}
+
+void drawWhiteKeys() {
 	pushMatrix();
 	resetMatrix();
 
 	translate(0, WinY - PianoY);
 
 	float t1 = WinX * 1.0f / 52; // 52 white keys.
+	stroke(0, 0, 0);
 	for(int i = 0; i < 52; i++) {
 		fill(255, 255, 255);
 		rect(i * t1, 0, t1, PianoY);
 	}
+	noStroke();
+	popMatrix();
+}
 
+void drawBlackKeys() {
+	pushMatrix();
+	resetMatrix();
+	translate(0, WinY - PianoY);
+
+	float t1 = WinX * 1.0f / 52; // 52 white keys.
   // draw the first black keys.  width of black key = 2 * whitekey / 3, height = 0.6 * whitekey
 	float t2 = t1 * 0.6667;
 	fill(0, 0, 0);
