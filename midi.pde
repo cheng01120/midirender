@@ -176,7 +176,7 @@ void loadMidi() {
 							keyEvent ke = flowKeys.get(k);
 							if(ke.key == key1 && ke.off == 0) {  
 									ke.off = tick; // 找到最近一个没有noteoff的key
-									flowKeys.set(k, ke); 
+									//flowKeys.set(k, ke);  // 不需要set
 									break;
 								}
 							}
