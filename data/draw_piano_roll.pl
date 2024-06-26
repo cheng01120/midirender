@@ -37,7 +37,7 @@ for(my $i =0; $i < 7; $i++) { # draw the left 35 black keys.
 	}
 }
 
-open my $fh, ">",  "./piano3.png" or die $!;
+open my $fh, ">",  "./piano.png" or die $!;
 binmode $fh;
 print $fh $im->png;
 close $fh;

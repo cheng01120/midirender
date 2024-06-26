@@ -91,7 +91,6 @@ void draw() {
 
 	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
 	float t0 = t1 + speed * 1000000;  // 划过屏幕的时间： 3秒。
-	float w  = WinX / 88.0f;
 
 	for(int i = 0; i < flowKeys.size(); i ++) {
 		keyEvent ke = flowKeys.get(i);
@@ -118,7 +117,7 @@ void draw() {
 			}
 			else {
 				fill(0, 255, 0);
-				rect(pos.x, -PianoY, pos.w,  PianoY);
+				rect(pos.x, -PianoY* 1.0f, pos.w,  PianoY * 1.0f);
 			}
 		}
 		// 方块。
@@ -217,7 +216,7 @@ keyPos keyPosition(long key) {
 	pos.w = 0;
 	pos.isWhiteKey = false;
 
-	float whiteKeyWidth = WinX / 52; // 52 white key , 36 black key.
+	float whiteKeyWidth = 1.0f * WinX / 52.0f; // 52 white key , 36 black key.
 	long n = whiteKeyNumber(key);
 	if(n != -1) {
 		pos.x = n * whiteKeyWidth;
@@ -227,7 +226,7 @@ keyPos keyPosition(long key) {
 	else {
 		key -= 1; // 如果是黑键，那么找出低一级白健的位置。
 		n = whiteKeyNumber(key);
-		pos.x = (n + 0.667) * whiteKeyWidth;
+		pos.x = (n + 0.667f) * whiteKeyWidth;
 		pos.w = 0.667 * whiteKeyWidth;
 	}
 
