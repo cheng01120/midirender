@@ -10,6 +10,8 @@ static final int   WinY   = 768;
 static final int   PianoY = 168;  // 键盘的高度。
 static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
+boolean saveVideo = false;
+
 // 要渲染的midi文件。
 String midi_filename = "D:/Cubase/MIDI/exported/passacaglia.mid";
 float  fps  = 29.97f;
@@ -32,7 +34,9 @@ class keyEvent {
 	long on;  // note on in ticks
 	long off; // note off in ticks
 };
+
 Vector<keyEvent> flowKeys;
+ArrayList<Integer> keyPressed; // 按下的键。
 
 class keyPos {  // 计算一个key在x方向的坐标以及宽度。
 	public float x;
@@ -48,7 +52,9 @@ void setup() {
 	background = loadImage("bg.png");
 	background.resize(WinX, WinY);
 
-	flowKeys = new Vector<keyEvent>();
+	flowKeys   = new Vector<keyEvent>();
+	keyPressed = new ArrayList<Integer>();
+
 	loadMidi();
 
 	if(flowKeys.size() == 0) { noLoop(); return; }
@@ -56,90 +62,29 @@ void setup() {
 	println("vector size: " + flowKeys.size());
 	println("Microseconds per tick: " + microSecPerTick);
 	noStroke();
-	videoExport = new VideoExport(this, "hello.mp4");
-	videoExport.setFfmpegPath("c:/ffmpeg/bin/ffmpeg.exe");
-	videoExport.setMovieFileName("d:/Cubase/Videos/MIDI.mp4");
-	//videoExport.setAudioFileName("d:/Cubase/Audio/passacaglia.wav");
-	videoExport.setFrameRate(fps);
-	videoExport.startMovie();
+	if(saveVideo) {
+		videoExport = new VideoExport(this, "hello.mp4");
+		videoExport.setFfmpegPath("c:/ffmpeg/bin/ffmpeg.exe");
+		videoExport.setMovieFileName("d:/Cubase/Videos/MIDI.mp4");
+		//videoExport.setAudioFileName("d:/Cubase/Audio/passacaglia.wav");
+		videoExport.setFrameRate(fps);
+		videoExport.startMovie();
+	}
 }
 
-/*
-时间线：
-     up                       t0
-      _________________________
-      | (0,  0)               |
-      |                       |
-      |                       |
-      |         WINDOW        |
-      |                       |
-      |                 (w,h) |
-      _________________________
-     down                     t1
-*/
-
-// 画的顺序： 背景，白键，按下的白键， 方块，黑键， 按下的黑键。（先要保存按下的黑键的位置）
+// 画的顺序： 背景，方块，白键，按下的白键， 黑键， 按下的黑键。
 void draw() {
 	background(0);
-
-	resetMatrix();
 	image(background, 0, 0);
-	if(flowKeys.size() == 0)  { drawKeyboard(); return; }
 
-	translate(0, WinY - PianoY); scale(1, -1);
+	if(flowKeys.size() == 0)  return;
 
-	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
-	float t0 = t1 + speed * 1000000;
+	image(drawTiles(), 0, 0);
+	image(drawKeyboard(), 0, WinY - PianoY);
 
-	drawWhiteKeys();
-	ArrayList<Float> pb = new ArrayList<Float>(); // pressed black keys.
-	for(int i = 0; i < flowKeys.size(); i ++) {
-		keyEvent ke = flowKeys.get(i);
-		color rectColor = keyColor[ ke.key % 12 ];
-		keyPos pos = keyPosition(ke.key);
-
-		float t_on  = ke.on  * microSecPerTick;
-		float t_off = ke.off * microSecPerTick;
-
-		if(t_on > t0 || t_off < t1) continue;
-
-		//将时间转换为像素坐标。
-		float y = (t_on - t1) * (WinY - PianoY)/(speed * 1000000);
-		float h = (t_off - t_on) * (WinY - PianoY)/(speed * 1000000);
-
-		if(y <= 0.0f) { // 方块已经触及到了键盘。
-			h += y; 
-			y = 0.0f; 
-
-			if(!pos.isWhiteKey) {
-				// 保存按下的黑键的位置。
-				//fill(255, 0, 0); rect(pos.x, -PianoY*0.6f, pos.w, PianoY*0.6f); 
-				pb.add(pos.x);
-				pb.add(-PianoY*0.6f);
-				pb.add(pos.w);
-				pb.add(PianoY*0.6f);
-			}
-			else {
-				// 画按下的白键。
-				fill(0, 255, 0); rect(pos.x, -PianoY* 1.0f, pos.w,  PianoY * 1.0f);
-			}
-		}
-
-		// draw 方块。
-		fill(#ffffff); rect(pos.x, y, pos.w, h);
-	}
-
-	drawBlackKeys();
-
-	// draw pressed black keys.
-	fill(255, 0, 0);
-	for(int i = 0; i < pb.size(); i += 4) {
-		rect(pb.get(i), pb.get(i+1), pb.get(i+2), pb.get(i+3));
-	}
-
-	videoExport.saveFrame();
+	if(saveVideo) videoExport.saveFrame();
 	if(frameCounter >= totalFrames) {
-		videoExport.endMovie();
+		if(saveVideo) videoExport.endMovie();
 		exit();
 	}
 
@@ -148,7 +93,7 @@ void draw() {
 
 void keyPressed() {
 	if(key == 'q') {
-		if(flowKeys.size() != 0) videoExport.endMovie();
+		if( (flowKeys.size() != 0) && saveVideo) videoExport.endMovie();
 		exit();
 	}
 }
@@ -245,6 +190,7 @@ keyPos keyPosition(long key) {
 	return pos;
 }
 
+
 long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键返回-1
 	key -= 21;
 	if(key == 0) {
@@ -279,49 +225,100 @@ long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键�
 	}
 }
 
-void drawKeyboard() {
-	drawWhiteKeys();
-	drawBlackKeys();
-}
+PGraphics drawKeyboard() {
+	PGraphics pg = createGraphics(WinX, PianoY);
+	pg.beginDraw();
 
-void drawWhiteKeys() {
-	pushMatrix();
-	resetMatrix();
-
-	translate(0, WinY - PianoY);
-
-	float t1 = WinX * 1.0f / 52; // 52 white keys.
-	strokeWeight(1);
-	stroke(0, 0, 0);
-	for(int i = 0; i < 52; i++) {
-		fill(#eeeeee);
-		rect(i * t1, 0, t1, PianoY);
+	// white keys.
+	pg.fill(255, 255, 255);
+	pg.stroke(0, 0, 0);
+	for(int i = 0; i < 88; i++) {
+		keyPos pos = keyPosition(21 +i);
+		if(pos.isWhiteKey) {
+			pg.rect(pos.x, 0, pos.w, PianoY);
+		}
 	}
-	noStroke();
-	popMatrix();
-}
+	pg.noStroke();
 
-void drawBlackKeys() {
-	pushMatrix();
-	resetMatrix();
-	translate(0, WinY - PianoY);
-
-	float t1 = WinX * 1.0f / 52; // 52 white keys.
-  // draw the first black keys.  width of black key = 2 * whitekey / 3, height = 0.6 * whitekey
-	float t2 = t1 * 0.6667;
-	fill(0, 0, 0);
-	rect(t1 * 0.667, 0, t1 * 0.667, PianoY * 0.6);
-
-
-	float start = t1 * 2;
-
-	int[] blackkey_id = { 0, 1, 3, 4, 5 };
-	for(int i =0; i < 7; i++) { // draw the left 35 black keys.
-		for( int id : blackkey_id) {
-			int offset = 2 + i * 7 + id;
-			rect( (1.0f * offset + 0.667) * t1, 0, t1 * 0.667, PianoY * 0.6);
+	// pressed white key.
+	if(keyPressed.size() != 0) {
+		pg.fill(0, 255, 0);
+		for(int key : keyPressed) {
+			keyPos pos = keyPosition(key);
+			if(pos.isWhiteKey) pg.rect(pos.x, 0, pos.w, PianoY);
 		}
 	}
 
-	popMatrix();
+	// black keys
+	pg.fill(0, 0, 0);
+	for(int i = 0; i < 88; i++) {
+		keyPos pos = keyPosition(21 +i);
+		if(!pos.isWhiteKey) {
+			pg.rect(pos.x, 0, pos.w, PianoY * 0.5f);
+		}
+	}
+
+	// pressed black keys.
+	if(keyPressed.size() != 0) {
+		pg.fill(255, 0, 0);
+		for(int key : keyPressed) {
+			keyPos pos = keyPosition(key);
+			if(!pos.isWhiteKey) pg.rect(pos.x, 0, pos.w, PianoY * 0.5f);
+		}
+	}
+
+	pg.endDraw();
+	return pg;
+}
+
+/*
+时间线：
+     up                       t0
+      _________________________
+      | (0,  0)               |
+      |                       |
+      |                       |
+      |         WINDOW        |
+      |                       |
+      |                 (w,h) |
+      _________________________
+     down                     t1
+*/
+
+PGraphics drawTiles() {
+	int Y = WinY - PianoY;
+	keyPressed.clear();
+
+	PGraphics pg = createGraphics(WinX, Y);
+	pg.beginDraw();
+	pg.translate(0, Y);
+	pg.scale(1, -1);
+
+	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
+	float t0 = t1 + speed * 1000000;
+
+	pg.color(255, 255, 255);
+	pg.noStroke();
+
+	for(keyEvent ke : flowKeys) {
+		float t_on  = ke.on  * microSecPerTick;
+		float t_off = ke.off * microSecPerTick;
+
+		if(t_on > t0 || t_off < t1) continue;
+
+		//将时间转换为像素坐标。
+		float y = (t_on - t1)    * Y / (speed * 1000000); // Y坐标。
+		float h = (t_off - t_on) * Y / (speed * 1000000); // 高度（ 长度？）
+
+		if(y <= 0.0f) { // 方块已经触及到了键盘。
+			h += y; 
+			y = 0.0f; 
+			keyPressed.add(ke.key);
+		}
+
+		keyPos pos = keyPosition(ke.key);
+		pg.rect(pos.x, y, pos.w, h);
+	}
+	pg.endDraw();
+	return pg;
 }
