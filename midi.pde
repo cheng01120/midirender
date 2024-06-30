@@ -317,7 +317,7 @@ void drawKeyboard() {
 	for(int i = 0; i < 88; i++) {
 		keyPos pos = keyPosition(21 +i);
 		if(!pos.isWhiteKey) {
-			rect(pos.x, 0, pos.w, PianoY * 0.5f);
+			rect(pos.x, 0, pos.w, PianoY * 0.6f);
 		}
 	}
 
@@ -326,7 +326,7 @@ void drawKeyboard() {
 		fill(255, 0, 0);
 		for(int key : keyPressed) {
 			keyPos pos = keyPosition(key);
-			if(!pos.isWhiteKey) rect(pos.x, 0, pos.w, PianoY * 0.5f);
+			if(!pos.isWhiteKey) rect(pos.x, 0, pos.w, PianoY * 0.6f);
 		}
 	}
 
