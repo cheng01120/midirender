@@ -10,13 +10,13 @@ static final int   WinY   = 768;
 static final int   PianoY = 168;  // 键盘的高度。
 static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
-boolean saveVideo = false;
+boolean saveVideo = true;
 
 // 要渲染的midi文件。
-String midi_filename = "D:/Cubase/MIDI/exported/passacaglia.mid";
+String midi_filename = "D:/Cubase/MIDI/exported/shrek0629.mid";
 float  fps  = 29.97f;
 
-PImage background, saber;
+PImage background, saber, shadow;
 long frameCounter = 0;
 long totalFrames  = 0;
 float microSecPerTick = 0.0f;
@@ -49,8 +49,12 @@ public void settings() {
 }
 
 void setup() {
-	background = loadImage("bg.png");
-	background.resize(WinX, WinY);
+	background = loadImage("sky.png");
+	background.resize(WinX, WinY - PianoY);
+
+	shadow = loadImage("shadow2.png");
+	saber  = loadImage("saber.png");
+	saber.resize(WinX, 30);
 
 	flowKeys   = new Vector<keyEvent>();
 	keyPressed = new ArrayList<Integer>();
@@ -74,13 +78,36 @@ void setup() {
 
 // 画的顺序： 背景，方块，白键，按下的白键， 黑键， 按下的黑键。
 void draw() {
+	imageMode(CORNER);
 	background(0);
 	image(background, 0, 0);
 
 	if(flowKeys.size() == 0)  return;
 
-	image(drawTiles(), 0, 0);
-	image(drawKeyboard(), 0, WinY - PianoY);
+	// grid.
+	stroke(30);
+	strokeWeight(1);
+	float w = 1.0f * WinX/52;
+	for(int i = 2; i < 52; i += 7) {
+		float xpos = i*w;
+		line(xpos, 0, xpos, WinY - PianoY);
+	}
+	noStroke();
+
+	blendMode(SCREEN);
+	drawTiles();
+	blendMode(BLEND);
+	drawKeyboard();
+
+
+	fill(50);
+	// the C4 note.
+	textSize(w/2);
+	text("C4", w*23 + 2, WinY - w/2);
+
+	// watermark.
+	textSize(20);
+	text("JeffZhang520", 30, 30);
 
 	if(saveVideo) videoExport.saveFrame();
 	if(frameCounter >= totalFrames) {
@@ -225,50 +252,86 @@ long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键�
 	}
 }
 
-PGraphics drawKeyboard() {
-	PGraphics pg = createGraphics(WinX, PianoY);
-	pg.beginDraw();
 
+
+float save = 0.0f;
+void drawSaber() {  // inside drawkeyboard ( coordinate same as drawkeyboard );
+  // We are going to draw a polygon out of the wave points
+	tint(123, 11, 194, 96);
+	image(saber, 0, -15);
+	noTint();
+	stroke(255);
+	strokeWeight(2);
+
+  beginShape(LINES); 
+	vertex(0, 0);
+
+	float   xoff = save; 
+	boolean update = false;
+	if(frameCounter % 5 == 0) update = true;
+  
+	xoff = save;
+  for (int x = 2; x < width; x += 2) { // Iterate over horizontal pixels
+    // Calculate a y value according to noise, map to 
+    float y = map(noise(xoff), 0, 1, -3, 3);    // Option #2: 1D Noise
+    
+    // Set the vertex
+    vertex(x, y); 
+    vertex(x, y); 
+    // Increment x dimension for noise
+    xoff += 0.05f;
+  }
+	if(update) save = xoff;
+  // increment y dimension for noise
+  vertex(width, 0);
+  endShape(CLOSE);
+	noStroke();
+}
+
+void drawKeyboard() {
+	pushMatrix();
+	resetMatrix();
+	translate(0, WinY - PianoY);
 	// white keys.
-	pg.fill(255, 255, 255);
-	pg.stroke(0, 0, 0);
+	fill(255, 255, 255);
+	stroke(0, 0, 0);
 	for(int i = 0; i < 88; i++) {
 		keyPos pos = keyPosition(21 +i);
 		if(pos.isWhiteKey) {
-			pg.rect(pos.x, 0, pos.w, PianoY);
+			rect(pos.x, 0, pos.w, PianoY);
 		}
 	}
-	pg.noStroke();
+	noStroke();
 
 	// pressed white key.
 	if(keyPressed.size() != 0) {
-		pg.fill(0, 255, 0);
+		fill(0, 255, 0);
 		for(int key : keyPressed) {
 			keyPos pos = keyPosition(key);
-			if(pos.isWhiteKey) pg.rect(pos.x, 0, pos.w, PianoY);
+			if(pos.isWhiteKey) rect(pos.x, 0, pos.w, PianoY);
 		}
 	}
 
 	// black keys
-	pg.fill(0, 0, 0);
+	fill(0, 0, 0);
 	for(int i = 0; i < 88; i++) {
 		keyPos pos = keyPosition(21 +i);
 		if(!pos.isWhiteKey) {
-			pg.rect(pos.x, 0, pos.w, PianoY * 0.5f);
+			rect(pos.x, 0, pos.w, PianoY * 0.5f);
 		}
 	}
 
 	// pressed black keys.
 	if(keyPressed.size() != 0) {
-		pg.fill(255, 0, 0);
+		fill(255, 0, 0);
 		for(int key : keyPressed) {
 			keyPos pos = keyPosition(key);
-			if(!pos.isWhiteKey) pg.rect(pos.x, 0, pos.w, PianoY * 0.5f);
+			if(!pos.isWhiteKey) rect(pos.x, 0, pos.w, PianoY * 0.5f);
 		}
 	}
 
-	pg.endDraw();
-	return pg;
+	drawSaber();
+	popMatrix();
 }
 
 /*
@@ -285,20 +348,21 @@ PGraphics drawKeyboard() {
      down                     t1
 */
 
-PGraphics drawTiles() {
+void drawTiles() {
 	int Y = WinY - PianoY;
 	keyPressed.clear();
 
-	PGraphics pg = createGraphics(WinX, Y);
-	pg.beginDraw();
-	pg.translate(0, Y);
-	pg.scale(1, -1);
+	pushMatrix();
+	resetMatrix();
+	translate(0, Y);
+	scale(1, -1);
 
 	float t1 = 1000000 * frameCounter * 1.0f / fps;  // ms
 	float t0 = t1 + speed * 1000000;
 
-	pg.color(255, 255, 255);
-	pg.noStroke();
+	color(255, 255, 255);
+	noStroke();
+	imageMode(CENTER);
 
 	for(keyEvent ke : flowKeys) {
 		float t_on  = ke.on  * microSecPerTick;
@@ -317,8 +381,13 @@ PGraphics drawTiles() {
 		}
 
 		keyPos pos = keyPosition(ke.key);
-		pg.rect(pos.x, y, pos.w, h);
+		color clr = keyColor[ ke.key % 12 ];
+		tint(clr);
+		fill(clr);
+		image(shadow, pos.x + pos.w/2, y + h/2 + 5, pos.w + 25*2, h + 25*2);
+		rect(pos.x, y, pos.w, h);
 	}
-	pg.endDraw();
-	return pg;
+	noTint();
+	imageMode(CORNER);
+	popMatrix();
 }
