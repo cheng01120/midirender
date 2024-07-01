@@ -52,7 +52,7 @@ void setup() {
 	background = loadImage("sky.png");
 	background.resize(WinX, WinY - PianoY);
 
-	shadow = loadImage("shadow2.png");
+	shadow = loadImage("shadow3.png");
 	saber  = loadImage("saber.png");
 	saber.resize(WinX, 30);
 
@@ -384,7 +384,7 @@ void drawTiles() {
 		color clr = keyColor[ ke.key % 12 ];
 		tint(clr);
 		fill(clr);
-		image(shadow, pos.x + pos.w/2, y + h/2 + 5, pos.w + 25*2, h + 25*2);
+		image(shadow, pos.x + pos.w/2, y + h/2, pos.w + 30, h + 20);
 		rect(pos.x, y, pos.w, h);
 	}
 	noTint();
