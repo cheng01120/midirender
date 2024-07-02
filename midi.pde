@@ -384,7 +384,7 @@ void drawTiles() {
 		color clr = keyColor[ ke.key % 12 ];
 		tint(clr);
 		fill(clr);
-		image(shadow, pos.x + pos.w/2, y + h/2, pos.w + 30, h + 20);
+		image(shadow, pos.x + pos.w/2, y + h/2, pos.w + 10, h);
 		rect(pos.x, y, pos.w, h);
 	}
 	noTint();
