@@ -1,2 +1,1 @@
-# midirender
-midi to video
+midirender
