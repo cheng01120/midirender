@@ -11,6 +11,8 @@ static final int   PianoY = 168;  // 键盘的高度。
 static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
 boolean saveVideo = true;
+ArrayList<Float> noises;
+float save = 0.0f;
 
 // 要渲染的midi文件。
 String midi_filename = "D:/Cubase/MIDI/exported/shrek0629.mid";
@@ -55,6 +57,11 @@ void setup() {
 	shadow = loadImage("shadow3.png");
 	saber  = loadImage("saber.png");
 	saber.resize(WinX, 30);
+	noises = new ArrayList<Float>();
+	for(int  s = 0; s <= WinX -2; s += 2) {
+		noises.add(map(noise(save), 0, 1, -3, 3));
+		save += 0.05;
+	}
 
 	flowKeys   = new Vector<keyEvent>();
 	keyPressed = new ArrayList<Integer>();
@@ -254,7 +261,6 @@ long whiteKeyNumber(long key) { // 查找是第几个白键， 如果是黑键�
 
 
 
-float save = 0.0f;
 void drawSaber() {  // inside drawkeyboard ( coordinate same as drawkeyboard );
   // We are going to draw a polygon out of the wave points
 	tint(123, 11, 194, 96);
@@ -264,28 +270,21 @@ void drawSaber() {  // inside drawkeyboard ( coordinate same as drawkeyboard );
 	strokeWeight(2);
 
   beginShape(LINES); 
-	vertex(0, 0);
+	vertex(0, noises.get(noises.size() - 1));
 
-	float   xoff = save; 
-	boolean update = false;
-	if(frameCounter % 5 == 0) update = true;
-  
-	xoff = save;
-  for (int x = 2; x < width; x += 2) { // Iterate over horizontal pixels
-    // Calculate a y value according to noise, map to 
-    float y = map(noise(xoff), 0, 1, -3, 3);    // Option #2: 1D Noise
-    
-    // Set the vertex
+  for (int x = 2; x < WinX; x += 2) { // Iterate over horizontal pixels
+		float y = noises.get(noises.size() -1 - x/2);
     vertex(x, y); 
     vertex(x, y); 
-    // Increment x dimension for noise
-    xoff += 0.05f;
   }
-	if(update) save = xoff;
   // increment y dimension for noise
-  vertex(width, 0);
+  vertex(width, noises.get(0));
   endShape(CLOSE);
 	noStroke();
+
+	noises.remove(0);
+	noises.add(map(noise(save), 0, 1, -3, 3));
+	save += 0.05;
 }
 
 void drawKeyboard() {
