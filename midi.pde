@@ -5,7 +5,7 @@ import java.lang.Number.*;
 import com.hamoid.*;
 
 // 要渲染的midi文件。
-String song = "Secret admiration";
+String song = "暗里着迷";
 String midi_filename = "D:/Cubase/MIDI/exported/secretadm.mid";
 float  fps  = 30.0f;
 
@@ -17,6 +17,7 @@ static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
 // 一下为不可更改部分。
 
+PFont myFont;
 boolean saveVideo = true;
 ArrayList<Float> noises;
 float noise_xoff = 0.0f;
@@ -55,6 +56,12 @@ public void settings() {
 void setup() {
 	background = loadImage("sky.png");
 	background.resize(WinX, WinY - PianoY);
+
+	//String[] fontList = PFont.list();
+  //printArray(fontList);
+	myFont = createFont("SimHei", 72);
+	textFont(myFont);
+	//textAlign(CENTER, CENTER);
 
 	shadow = loadImage("shadow3.png");
 	saber  = loadImage("saber.png");
