@@ -4,26 +4,28 @@ import java.util.*;
 import java.lang.Number.*;
 import com.hamoid.*;
 
+// 要渲染的midi文件。
+String song = "Secret admiration";
+String midi_filename = "D:/Cubase/MIDI/exported/secretadm.mid";
+float  fps  = 30.0f;
+
 // 定义window的size。
 static final int   WinX   = 1366;
 static final int   WinY   = 768;
 static final int   PianoY = 168;  // 键盘的高度。
 static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
+// 一下为不可更改部分。
+
 boolean saveVideo = true;
 ArrayList<Float> noises;
-float save = 0.0f;
-
-// 要渲染的midi文件。
-String midi_filename = "D:/Cubase/MIDI/exported/shrek0629.mid";
-float  fps  = 29.97f;
+float noise_xoff = 0.0f;
 
 PImage background, saber, shadow;
 long frameCounter = 0;
 long totalFrames  = 0;
 float microSecPerTick = 0.0f;
 VideoExport videoExport;
-
 
 static final color[] keyColor = { 
 	#a1ab20, #234fbe, #ab205b, #1a8cca, 
@@ -59,8 +61,8 @@ void setup() {
 	saber.resize(WinX, 30);
 	noises = new ArrayList<Float>();
 	for(int  s = 0; s <= WinX -2; s += 2) {
-		noises.add(map(noise(save), 0, 1, -3, 3));
-		save += 0.05;
+		noises.add(map(noise(noise_xoff), 0, 1, -3, 3));
+		noise_xoff += 0.05;
 	}
 
 	flowKeys   = new Vector<keyEvent>();
@@ -100,6 +102,9 @@ void draw() {
 		line(xpos, 0, xpos, WinY - PianoY);
 	}
 	noStroke();
+	if(frameCounter <= fps * 6) {
+		drawSongName();
+	}
 
 	blendMode(SCREEN);
 	drawTiles();
@@ -195,7 +200,25 @@ void loadMidi() {
 						}
 					}
 					if(flowKeys.get(flowKeys.size() -1).off == 0) { flowKeys.remove(flowKeys.size() -1); }
-				}
+
+					// 添加前置时间。
+					/*
+					long tick0 = flowKeys.get(0).on;
+					float ttt = tick0 * microSecPerTick - 9.0f * 1000000;
+					if(ttt < 0) { // 6sec title + 3sec secreen.
+						long  ti = -1 * round(ttt / microSecPerTick);
+						for(keyEvent kkk : flowKeys) { 
+							kkk.on  += ti;
+							kkk.off += ti;
+						}
+					}
+					*/
+
+					for(keyEvent kkk : flowKeys) { 
+						kkk.on  += 9 * 1000000 / microSecPerTick;    // 7s text + 3s flow
+						kkk.off += 9 * 1000000 / microSecPerTick;
+					}
+				} // if flowKeys.size();
 		}
 	} catch(Exception e) { println("Unable to load midi file."); } 
 } // loadMidi
@@ -283,8 +306,8 @@ void drawSaber() {  // inside drawkeyboard ( coordinate same as drawkeyboard );
 	noStroke();
 
 	noises.remove(0);
-	noises.add(map(noise(save), 0, 1, -3, 3));
-	save += 0.05;
+	noises.add(map(noise(noise_xoff), 0, 1, -3, 3));
+	noise_xoff += 0.05;
 }
 
 void drawKeyboard() {
@@ -389,4 +412,32 @@ void drawTiles() {
 	noTint();
 	imageMode(CORNER);
 	popMatrix();
+}
+
+void drawSongName() {
+	textSize(72);
+
+	float strWidth = textWidth(song);
+	float strAscent = textAscent();
+	float strDescent = textDescent();
+	float strHeight = strAscent + strDescent;
+
+	//rect(x, y - strAscent, strWidth, strHeight);
+	float x = (WinX - strWidth)/2.0f;
+	float y = (WinY - PianoY - strHeight) /2.0f;
+
+	float opacity;
+	if(frameCounter <= fps *2)  {// 3 sec fade in.
+		opacity = map(frameCounter, 0, fps * 3, 0, 255);
+	}
+	else if(frameCounter <= fps * 4) { 
+		opacity = 255;
+	}
+	else {
+		opacity = map(frameCounter - fps * 4, 0, fps * 2, 0, 255);  // 2 sec fade out.
+		opacity = 255 - opacity;
+	}
+
+	fill(255, 255, 255, opacity);
+	text(song, x, y);
 }
