@@ -16,7 +16,6 @@ static final int   PianoY = 168;  // 键盘的高度。
 static final float speed  = 3.0f; // 划过屏幕的时间： 3秒。
 
 // 一下为不可更改部分。
-
 PFont myFont;
 boolean saveVideo = true;
 ArrayList<Float> noises;
@@ -152,7 +151,7 @@ void loadMidi() {
 			println("Duration (ticks): " + s.getTickLength());
 			println("Duration (microsec): " + s.getMicrosecondLength());
 			println("Resolution: " + s.getResolution());
-			totalFrames = round(s.getMicrosecondLength() * fps / 1000000 + 3*fps); //增加三秒时长。
+			totalFrames = round(s.getMicrosecondLength() * fps / 1000000 + (9 + 3)*fps); //增加三秒时长 + 9秒片头。
 			println("Total frames: " + totalFrames);
 			microSecPerTick = s.getMicrosecondLength() * 1.0f / s.getTickLength();
 
