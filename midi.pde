@@ -151,7 +151,7 @@ void loadMidi() {
 			println("Duration (ticks): " + s.getTickLength());
 			println("Duration (microsec): " + s.getMicrosecondLength());
 			println("Resolution: " + s.getResolution());
-			totalFrames = round(s.getMicrosecondLength() * fps / 1000000 + (9 + 3)*fps); //增加三秒时长 + 9秒片头。
+			totalFrames = round(s.getMicrosecondLength() * fps / 1000000 + 3*fps); //增加三秒时长 + 9秒片头。
 			println("Total frames: " + totalFrames);
 			microSecPerTick = s.getMicrosecondLength() * 1.0f / s.getTickLength();
 
@@ -221,8 +221,8 @@ void loadMidi() {
 					*/
 
 					for(keyEvent kkk : flowKeys) { 
-						kkk.on  += 9 * 1000000 / microSecPerTick;    // 7s text + 3s flow
-						kkk.off += 9 * 1000000 / microSecPerTick;
+						kkk.on  += 3 * 1000000 / microSecPerTick;    // 增加3秒片头时间。
+						kkk.off += 3 * 1000000 / microSecPerTick;
 					}
 				} // if flowKeys.size();
 		}
@@ -421,7 +421,7 @@ void drawTiles() {
 }
 
 void drawSongName() {
-	textSize(72);
+	textSize(84);
 
 	float strWidth = textWidth(song);
 	float strAscent = textAscent();
